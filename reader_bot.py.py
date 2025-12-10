@@ -1,11 +1,14 @@
 import logging
+import os # <--- Используется для получения токена
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, ContextTypes
 import time
 
 # --- 1. Настройка и Константы ---
-# ВАШ ТОКЕН
-BOT_TOKEN = "8520712073:AAEjMrFGG0mYlDWTQEnviES-Fkxa9eklfPs" 
+# Получаем токен из переменной окружения Railway (BOT_TOKEN).
+# Если переменная не найдена (например, при локальном запуске), 
+# токен будет установлен как "ТОКЕН_НЕ_НАЙДЕН"
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "ТОКЕН_НЕ_НАЙДЕН") 
 
 # Настройка логирования
 logging.basicConfig(
@@ -15,10 +18,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__) 
 
 # --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ АНТИ-СПАМА ---
-# Хранение истории сообщений для каждого чата
 SPAM_TRACKER = {} 
-SPAM_LIMIT = 3   # Максимальное количество сообщений (напр., 3)
-TIME_WINDOW = 5  # Окно времени в секундах (напр., 5 секунд)
+SPAM_LIMIT = 3   
+TIME_WINDOW = 5  
 
 # --- 2. Обработчик Сообщений ---
 async def read_incoming_business_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -58,8 +60,8 @@ async def read_incoming_business_message(update: Update, context: ContextTypes.D
         except Exception as e:
             logger.error(f"Ошибка при отправке анти-спам сообщения: {e}")
             
-        SPAM_TRACKER[chat_id] = [] # Сброс, чтобы не спамить ответом
-        return # Важно: выходим, НЕ ЧИТАЯ сообщение
+        SPAM_TRACKER[chat_id] = [] 
+        return
 
     # --- ЛОГИКА ПРОЧТЕНИЯ (Если не спам) ---
     logger.info(f"Получено Business-сообщение ID: {connection_id} от чата: {chat_id}. ID сообщения: {message_id}")
@@ -72,14 +74,17 @@ async def read_incoming_business_message(update: Update, context: ContextTypes.D
             message_id=message_id 
         )
         logger.info(f"✅ Успешно прочитано сообщение в чате {chat_id}.")
-        
-        # Бот продолжает работать и ждать следующего сообщения.
 
     except Exception as e:
         logger.error(f"❌ Ошибка при вызове readBusinessMessage: {e}")
         
 # --- 3. Основная Функция Запуска ---
 def main() -> None:
+    # Проверка, что токен был получен (если токен "ТОКЕН_НЕ_НАЙДЕН", бот не запустится)
+    if BOT_TOKEN == "ТОКЕН_НЕ_НАЙДЕН":
+        logger.error("Ошибка: Токен BOT_TOKEN не был найден. Убедитесь, что вы задали переменную окружения на хостинге.")
+        return
+
     application = Application.builder().token(BOT_TOKEN).build()
 
     handler = MessageHandler(
@@ -89,7 +94,6 @@ def main() -> None:
     application.add_handler(handler)
 
     logger.info("Бот запущен и ожидает Business-сообщений (режим 24/7)...")
-    # run_polling будет работать бесконечно, пока не будет остановлен вручную
     application.run_polling(poll_interval=1)
 
 if __name__ == '__main__':
