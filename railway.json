@@ -1,0 +1,10 @@
+{
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "pip install -r requirements.txt",
+    "installCommand": ""
+  },
+  "deploy": {
+    "startCommand": "python reader_bot.py"
+  }
+}
