@@ -5,6 +5,6 @@
     "installCommand": ""
   },
   "deploy": {
-    "startCommand": "python reader_bot.py"
+    "startCommand": "python app.py"
   }
 }
